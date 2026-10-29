@@ -55,5 +55,5 @@ function iniciarContador(campanha) {
     intervalo: campanha.intervaloContadorSegundos,
   });
 
-  return setInterval(tick, campanha.intervaloContadorSegundos);
+  return setInterval(tick, campanha.intervaloContadorSegundos * 1000);
 }

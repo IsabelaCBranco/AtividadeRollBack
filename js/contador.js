@@ -7,6 +7,7 @@
  */
 
 const historicoContador = [];
+const LIMITE_HISTORICO_CONTADOR = 60;
 
 function formatarTempo(ms) {
   const total = Math.floor(ms / 1000);
@@ -14,34 +15,45 @@ function formatarTempo(ms) {
   const horas = Math.floor((total % 86400) / 3600);
   const minutos = Math.floor((total % 3600) / 60);
   const segundos = total % 60;
-  const dois = (n) => String(n).padStart(2, '0');
+  const dois = (n) => String(n).padStart(2, "0");
   return `<b>${dias}</b>d <b>${dois(horas)}</b>h <b>${dois(minutos)}</b>m <b>${dois(segundos)}</b>s`;
 }
 
 function iniciarContador(campanha) {
-  const banner = document.getElementById('banner-bf');
-  const alvo = banner.querySelector('.bf-tempo');
-  const vitrine = document.getElementById('vitrine');
+  const banner = document.getElementById("banner-bf");
+  const alvo = banner.querySelector(".bf-tempo");
   const fim = new Date(campanha.fim).getTime();
   banner.hidden = false;
 
-  Observabilidade.registrarMedidor('historico_contador', () => historicoContador.length);
+  Observabilidade.registrarMedidor(
+    "historico_contador",
+    () => historicoContador.length,
+  );
 
   function tick() {
-    const restante = Math.max(0, fim - Date.now());
+    const instante = Date.now();
+    const restante = Math.max(0, fim - instante);
+
     historicoContador.push({
-      instante: Date.now(),
+      instante: instante,
       restante: restante,
       jogos: JOGOS.map((jogo) => ({ ...jogo })),
-      vitrine: vitrine.cloneNode(true)
     });
-    Observabilidade.contar('contador_ticks');
+
+    if (historicoContador.length > LIMITE_HISTORICO_CONTADOR) {
+      historicoContador.shift();
+    }
+
+    Observabilidade.contar("contador_ticks");
     alvo.innerHTML = formatarTempo(restante);
   }
 
   tick();
-  Observabilidade.info('CONTADOR_INICIADO', 'Contador da Black Friday ativo', {
-    fim: campanha.fim, intervalo: campanha.intervaloContadorSegundos
+
+  Observabilidade.info("CONTADOR_INICIADO", "Contador da Black Friday ativo", {
+    fim: campanha.fim,
+    intervalo: campanha.intervaloContadorSegundos,
   });
+
   return setInterval(tick, campanha.intervaloContadorSegundos);
 }
